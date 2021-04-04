@@ -44,6 +44,15 @@ class UsbAnlzDatabase(dict):
       return
     self[target] = obj.content.entries
 
+  def collect_pcos(self, target):
+    data = []
+    for obj in (t for t in self.parsed.tags if t.type == "PCOB"):
+      data.extend(obj.content.entries)
+    if hasattr(self, target):
+      self[target].extend(data)
+    else:
+      self[target] = data
+
   def _load_file(self, filename):
     with open(filename, "rb") as f:
       self.parsed = AnlzFile.parse_stream(f);
@@ -54,18 +63,14 @@ class UsbAnlzDatabase(dict):
   def _parse_dat(self):
     logging.debug("Loaded %d tags", len(self.parsed.tags))
     self.collect_entries("PWAV", "preview_waveform")
-    self.collect_entries("PCOB", "cue_points")
     self.collect_entries("PQTZ", "beatgrid")
-    self.parsed = None
+    self.collect_pcos("cue_points")
 
   def _parse_ext(self):
     logging.debug("Loaded %d tags", len(self.parsed.tags))
     self.collect_entries("PWV3", "waveform")
     self.collect_entries("PWV4", "color_preview_waveform")
     self.collect_entries("PWV5", "color_waveform")
-    # TODO: collect PCOB here as well?
-    # self.collect_entries("PCOB", "cue_points")
-    self.parsed = None
 
   def load_dat_buffer(self, data):
     logging.debug("Loading DAT from buffer")
